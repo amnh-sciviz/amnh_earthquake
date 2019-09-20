@@ -89,25 +89,19 @@ function checkHowManyBackups(folder) {
 }
 
 function checkGlobeData(data) {
-  var new_data = data[0].features;
-  var old_data = data[1].features;
+ 	var new_data = data[0];
+	var eqs_string = JSON.stringify(new_data)
+	var currtime = Date.parse(new Date)
+	fs.writeFile('public/data/eq_data_backup/backup_'+ currtime +'.json', eqs_string, (err) => {    // back up the current data
+	  if (err) throw err;
+	  // console.log("successfully backed up old eqs")
+	  checkHowManyBackups("eq_data_backup")
+	})
+	fs.writeFile('public/data/earthquake_data.json', eqs_string, (err) => {                 // save new current data
+	  if (err) throw err;
+	  // console.log("successfully cached new eqs")
+	})
 
-  if (new_data[0].id != old_data[0].id){                                // if the two most recent eqs in each file don't match
-    var eqs_string = JSON.stringify(old_data)
-    var currtime = Date.parse(new Date)
-    fs.writeFile('public/data/eq_data_backup/backup_'+ currtime +'.json', eqs_string, (err) => {    // back up the current data
-      if (err) throw err;
-      // console.log("successfully backed up old eqs")
-      checkHowManyBackups("eq_data_backup")
-    })
-    var new_eqs_string = JSON.stringify(new_data)
-    fs.writeFile('public/data/earthquake_data.json', eqs_string, (err) => {                 // save new current data
-      if (err) throw err;
-      // console.log("successfully cached new eqs")
-    })
-  } else {
-    // console.log("no new earthquakes")
-  }
 }
 
 function getGlobeData(){
@@ -115,11 +109,14 @@ function getGlobeData(){
     var hist = JSON.parse(history);
     request({
       url: "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"      //find the info about the earthquake
+      // url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_day.geojson" // limit to 1.0+ earthquakes
+      // url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson" // limit to significant earthquakes
     }, function(error, response, body){
-      if (error) {                                                                            // if there's an error, use the saved data
+      if (error || body.startsWith("Error")) {                                                                            // if there's an error, use the saved data
         fs.readFile('public/data/earthquake_data.json', (err, eqs) => {
           // console.log("got error, using cached data")
-          mainWindow.webContents.send('return-globe-data', [hist, eqs])
+          var eqdata = JSON.parse(eqs); 
+          mainWindow.webContents.send('return-globe-data', [eqdata, hist])
         })
       } else {
         var eqdata = JSON.parse(body)                                                         // otherwise, use the new data and then cache it
@@ -229,11 +226,12 @@ ipcMain.on('get-retm', (event, arg) => {
   request({
     url: arg.url
   }, function(error, response, body){
-    if (error){
-      useCachedRETM();
-    } else {
-      checkIfNewRETMEntry(body)
-    }
+    useCachedRETM();
+    // if (error){
+    //   useCachedRETM();
+    // } else {
+    //   checkIfNewRETMEntry(body)
+    // }
   })
 })
 
@@ -257,7 +255,7 @@ function createWindow () {
     slashes: true
   }))
 
-  // mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 
   mainWindow.on('closed', function () {
     mainWindow = null
