@@ -40,15 +40,15 @@ app.main = (function() {
 		source = $("#news_template").html();
 		news_template = Handlebars.compile(source);
 
-		ipcRenderer.send("get-retm", {url:"http://www.iris.edu/hq/api/json-dmc-evid-retm?callback=a", which: "retm"})
-
 		d3.json("data/defs_and_questions.json", function(err, res){
 				var questions = res["questions"]
 				addQuestions(questions);
 
 				showTemplate("#question_container", question_template, res);
 				showTemplate("#definition_container", definition_template, res);
-				showTemplate("#news_container", news_template, res)
+				showTemplate("#news_container", news_template, res);
+				ipcRenderer.send("get-retm", {url:"http://www.iris.edu/hq/api/json-dmc-evid-retm?callback=a", which: "retm"})
+
 		})
 	}
 
@@ -70,7 +70,7 @@ app.main = (function() {
 		});
 
 		ipcRenderer.on('return-retm', (event, arg) => {
-			// console.log(arg)
+			console.log('return-retm', arg)
 			retm_data = arg;
 			addRETMtoGlobe(arg);
 			showTemplate("#retm_container", retm_template, {"retm": arg}); 
@@ -87,6 +87,7 @@ app.main = (function() {
 		})
 
 		ipcRenderer.on('return-globe-data', (event, arg) => {
+			//console.log(arg)
 			drawGlobeData(arg);
 		})
 	}
@@ -268,7 +269,7 @@ app.main = (function() {
 		ipcSetup();	// setup communication
 		setupGlobe();  // setup globe
 		ipcRenderer.send('get-globe-data');
-		attachEvents();	// setup interaction
+		//attachEvents();	// setup interaction
 		checkInactivity(); 
 
 		setTimeout(function(){
