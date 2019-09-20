@@ -401,3 +401,12 @@ i {
 	display: none;
 }
 
+.cesium-viewer-bottom {
+	display: none !important;
+	opacity: 0 !important;
+	bottom: -100vh !important;
+	left: -100vw !important;
+	transform: scale(0);
+	z-index: -1;
+}
+
